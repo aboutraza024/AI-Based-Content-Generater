@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CWT - Humanized Content Writer Assistant</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css?v=2026-07-26_v3">
+</head>
+<body>
+    <div class="light-app-container">
+        <!-- Header -->
+        <header class="app-navbar">
+            <div class="brand-group">
+                <div class="brand-logo">✨</div>
+                <div>
+                    <h1 class="brand-title">Humanized Content Assistant</h1>
+                    <p class="brand-subtitle">Plagiarism-Free & AI-Detection Bypass Engine</p>
+                </div>
+            </div>
+            <div class="nav-actions">
+                <button type="button" class="btn-light-secondary" onclick="startNewProject()">🔄 New Article</button>
+            </div>
+        </header>
+
+        <!-- Main Workspace Grid -->
+        <main class="workspace-grid">
+            <!-- Left Panel: Input Setup Controls -->
+            <aside class="sidebar-panel">
+                <div class="white-card">
+                    <div class="card-title-group">
+                        <span class="step-badge">Step 1</span>
+                        <h2>Content Setup</h2>
+                    </div>
+
+                    <form id="setup-form" onsubmit="event.preventDefault(); handleOutlineSubmit(event); return false;">
+                        <div class="form-group">
+                            <label for="input-region">Language & Region</label>
+                            <select id="input-region" class="light-select">
+                                <option value="USA English" selected>USA English</option>
+                                <option value="UK English">UK English</option>
+                                <option value="Australia English">Australia English</option>
+                                <option value="Canada English">Canada English</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="input-type">Content Type</label>
+                            <select id="input-type" class="light-select">
+                                <option value="informational" selected>Informational (Guide / Explainer)</option>
+                                <option value="commercial">Commercial (Review / Comparison)</option>
+                                <option value="transactional">Transactional (Sales / Product Copy)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="input-product">Product / Article Topic Name *</label>
+                            <input type="text" id="input-product" class="light-input" value="The Future of Artificial Intelligence" placeholder="e.g. AI Content Writing Assistant" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="input-audience">Target Audience *</label>
+                            <input type="text" id="input-audience" class="light-input" value="Tech Bloggers & Content Marketers" placeholder="e.g. Freelance Copywriters, SaaS Founders, Marketers" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="input-tone">Writing Tone</label>
+                            <select id="input-tone" class="light-select">
+                                <option value="professional" selected>Professional</option>
+                                <option value="casual">Casual</option>
+                                <option value="friendly">Friendly</option>
+                                <option value="persuasive">Persuasive</option>
+                                <option value="educational">Educational</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="input-wordcount">Target Word Count: <span id="wc-label">800</span> words</label>
+                            <input type="range" id="input-wordcount" class="light-range" min="300" max="3000" step="100" value="800" oninput="document.getElementById('wc-label').textContent=this.value">
+                        </div>
+
+                        <button type="button" id="btn-generate-outline" class="btn-light-primary w-full" onclick="handleOutlineSubmit(event)">
+                            🔍 Analyze Competitors & Create Outline
+                        </button>
+                    </form>
+                </div>
+            </aside>
+
+            <!-- Right Main Panel: Outline Approval & VIP Article Output -->
+            <section class="main-content-panel">
+                <!-- Error Banner -->
+                <div class="white-card error-card" id="error-banner" style="display: none; border-left: 4px solid #ef4444; background: #fef2f2; margin-bottom: 20px;">
+                    <h4 style="color: #dc2626; margin-bottom: 4px;">⚠️ Error Occurred</h4>
+                    <p id="error-banner-msg" style="color: #991b1b; font-size: 13px; margin: 0;"></p>
+                </div>
+
+                <!-- Idle State -->
+                <div class="white-card empty-state-card" id="empty-state">
+                    <div class="empty-icon">📝</div>
+                    <h3>Start Your High-Quality Humanized Content</h3>
+                    <p>Fill in the parameters on the left. The system will search top competitors via Tavily, generate a professional editable outline for your approval, and write a VIP formatted humanized article.</p>
+                </div>
+
+                <!-- Loading Spinner State -->
+                <div class="white-card loading-card" id="loading-state" style="display: none;">
+                    <div class="light-spinner"></div>
+                    <h3 id="loading-title">Analyzing Competitors & Structuring Outline...</h3>
+                    <p class="loading-sub" id="loading-sub">Running Tavily web search graph & Azure OpenAI gpt-5.4 model...</p>
+                </div>
+
+                <!-- OUTLINE APPROVAL CARD -->
+                <div class="white-card" id="outline-approval-card" style="display: none;">
+                    <div class="card-header-flex">
+                        <div>
+                            <span class="badge-blue">Step 2: Review Outline</span>
+                            <h2 class="mt-1">Competitor Analysis & Proposed Outline</h2>
+                        </div>
+                        <span class="badge-amber">Awaiting Approval</span>
+                    </div>
+
+                    <!-- Competitor Summary Box -->
+                    <div class="competitor-summary-box mt-3" id="comp-summary-box">
+                        <div class="box-title">🔍 Competitor Research Insights (Tavily Search)</div>
+                        <div id="comp-summary-body" class="comp-text"></div>
+                    </div>
+
+                    <!-- Formatted Professional Outline Preview -->
+                    <div class="outline-preview-container mt-4">
+                        <div class="preview-header">
+                            <h3>📋 Professional Article Outline</h3>
+                            <button type="button" class="btn-link" onclick="toggleOutlineEditor()">✏️ Raw Markdown Edit</button>
+                        </div>
+                        <div id="outline-formatted-view" class="formatted-outline-box"></div>
+                        <textarea id="outline-raw-editor" class="light-textarea mt-2" rows="10" style="display: none;"></textarea>
+                    </div>
+
+                    <!-- YES / NO APPROVAL QUESTION BOX -->
+                    <div class="approval-question-card mt-4">
+                        <div class="question-header">
+                            <span class="q-icon">❓</span>
+                            <div>
+                                <h3>Kya aap is outline ko accept karte hain?</h3>
+                                <p>Do you approve this outline to proceed with full humanized article generation?</p>
+                            </div>
+                        </div>
+
+                        <!-- Yes/No Action Buttons -->
+                        <div class="approval-buttons-row mt-3">
+                            <button type="button" class="btn-approve-yes" onclick="approveOutlineAndGenerate()">
+                                ✅ Yes, Accept & Generate Article
+                            </button>
+                            <button type="button" class="btn-approve-no" onclick="showFeedbackInput()">
+                                ❌ No, I Want Changes
+                            </button>
+                        </div>
+
+                        <!-- Feedback Input Area (Shown if user clicks No) -->
+                        <div class="feedback-input-box mt-3" id="feedback-input-box" style="display: none;">
+                            <label for="outline-feedback-text">Specify your custom changes / feedback for the outline:</label>
+                            <div class="feedback-row mt-2">
+                                <input type="text" id="outline-feedback-text" class="light-input" placeholder="e.g. Add a section covering pricing comparison, remove section 4">
+                                <button type="button" class="btn-light-primary" onclick="recreateOutlineWithFeedback()">Submit Changes ➔</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIP ARTICLE DISPLAY CARD -->
+                <div class="white-card VIP-article-card mt-4" id="article-output-card" style="display: none;">
+                    <!-- Header Actions -->
+                    <div class="card-header-flex">
+                        <div>
+                            <span class="badge-green">✓ 100% Humanized & VIP Formatted</span>
+                            <h2 class="mt-1" id="article-main-heading">Generated Article</h2>
+                        </div>
+                        <div class="article-actions">
+                            <span class="badge-neutral" id="article-wc-badge">Words: 0</span>
+                            <button type="button" class="btn-light-secondary" onclick="copyArticleContent()">📋 Copy Article</button>
+                        </div>
+                    </div>
+
+                    <!-- Mechanical Linter Self-Review Audit Badge -->
+                    <div class="linter-audit-card mt-3">
+                        <div class="audit-header">
+                            <span class="audit-icon">🛡️</span>
+                            <div>
+                                <h4>Automatic Mechanical Linter Audit: PASSED</h4>
+                                <p>Enforced zero semicolons, zero Oxford commas, parenthetical hyphen cleanup, and varied sentence openings.</p>
+                            </div>
+                        </div>
+                        <div class="audit-metrics-row mt-2" id="linter-metrics-container"></div>
+                    </div>
+
+                    <!-- VIP Article Prose Body -->
+                    <article id="article-prose-body" class="vip-prose-article mt-4"></article>
+
+                    <!-- Meta Data Section -->
+                    <div class="meta-data-card mt-4" id="article-meta-card">
+                        <h3>🏷️ Auto Meta Description & Meta Tags</h3>
+                        <div class="meta-field mt-2">
+                            <label>Meta Description (140-160 chars):</label>
+                            <p class="meta-desc-box" id="article-meta-desc">-</p>
+                        </div>
+                        <div class="meta-field mt-2">
+                            <label>Meta Tags / Keywords:</label>
+                            <div class="tags-flex" id="article-meta-tags"></div>
+                        </div>
+                    </div>
+
+                    <!-- Humanize Drawer -->
+                    <div class="revision-box mt-4">
+                        <h3>✏️ Humanize / Rewrite Article</h3>
+                        <div class="feedback-row mt-2">
+                            <input type="text" id="article-revision-input" class="light-input" placeholder="Optional: e.g. Make paragraph 2 punchier, add more examples">
+                            <button type="button" class="btn-light-primary" onclick="submitArticleRevision()">Humanize Article ➔</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="/static/app.js?v=2026-07-26_v3"></script>
+</body>
+</html>
